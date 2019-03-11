@@ -2,36 +2,39 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-
+import csv
 import tensorflow as tf
 import os
 import argparse
+import re
+import matplotlib.pyplot as plt 
 
-X = np.genfromtxt(
-    r'/home/kartik/work/projects/motion/local/x.csv', delimiter=',')
+with open('/home/daanvir/gg/project/SRM_project/x.csv') as f:
+    shape = tuple(int(num) for num in re.findall(r'\d+', f.readline()))
+X = np.loadtxt('/home/daanvir/gg/project/SRM_project/x.csv').reshape(shape)
+
 Y = np.genfromtxt(
-    r'/home/kartik/work/projects/motion/local/y.csv', delimiter=',')
+    r'/home/daanvir/gg/project/SRM_project/y.csv', delimiter=',')
+yp=np.zeros((1024,8))
+print(Y[0])
 
+for i in range(1024):
+    yp[i][int(Y[i])]=1
+print(X,Y)
 X, Y = shuffle(X, Y, random_state=1)
 train_x, test_x, train_y, test_y = train_test_split(
-    X, Y, test_size=0.2, random_state=415)
+    X, yp, test_size=0.2, random_state=415)
 
-x_test = np.genfromtxt(
-    r'/home/kartik/work/projects/motion/local/x_pred.csv', delimiter=',')
+x_test = X
+
 n_dim = 48
-n_class = 3
-a = tf.Variable([0.3], tf.float32)
-b = tf.Variable([0.4], tf.float32)
-x = tf.placeholder(tf.float32, [None, n_dim])
-y = tf.placeholder(tf.float32, [None, n_class])
-W = tf.Variable(tf.zeros([n_dim, n_class]))
-b = tf.Variable(tf.zeros([n_class]))
 
-learning_rate = 0.001
-training_epochs = 5000
+
+learning_rate = 0.01
+training_epochs = 2000
 batch_size = 100
 display_step = 1000
-model_path = r'/home/kartik/work/projects/motion/local/NMI'
+model_path = r'/home/daanvir/gg/project/SRM_project/NMI'
 
 # Network Parameters
 n_hidden_1 = 70  # 1st layer number of neurons
@@ -92,27 +95,52 @@ train_op = optimizer.minimize(loss_op)
 
 # Initializing the variables
 init = tf.global_variables_initializer()
+
 saver = tf.train.Saver()
+x=[]
+y=[]
+#saver = tf.train.Saver()
 with tf.Session() as sess:
     sess.run(init)
-    saver.restore(sess, model_path)
-    pred = tf.nn.softmax(logits)  # Apply softmax to logits
-    y_pred = tf.identity(pred, name="output_pred")
-    y_pred_cls = tf.argmax(y_pred, axis=1)
-    y_pred_cls = tf.identity(y_pred_cls, name="output_cls")
-    correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(Y, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    pap = 0
-    q = 0
-    prediction_run = sess.run(pred, feed_dict={X: x_test.reshape(1, 48)})
-    print(np.argmax(prediction_run))
-    test_chkp = saver.save(sess, 'results/checkpoints/cp1.chkp')
-    tf.train.write_graph(sess.graph_def, 'results', 'model.pbtxt')
+    for i in range(training_epochs):
+        #saver.restore(sess, model_path)
+         # Apply softmax to logits 
+        #correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(Y, 1))
+        #accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+        _,c= sess.run([train_op,loss_op], feed_dict={X: x_test.reshape(1024, 48),Y: yp})
+        
+        
+        
+        #test_chkp = saver.save(sess, 'results/checkpoints/cp1.chkp')
+        #tf.train.write_graph(sess.graph_def, 'results', 'model.pbtxt')
+        if i%100==0:
+            x.append(i)
+            
 
+            correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(yp, 1))
+            
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+            print(c,i)
+            print("Accuracy:", accuracy.eval({X: x_test, Y: yp}))
+            y.append(accuracy.eval({X: x_test, Y: yp}))
+            
+    save_path = saver.save(sess, model_path)
+    print("Model saved in file: %s" % save_path)
+plt.plot(x,y)
+plt.xlabel('epochs')
+plt.ylabel('accuracy')
+plt.show()
+        
+
+            
+ 
+#pred = tf.nn.softmax(logits) 
+#print(pred)
+    
 # freeze_graph \
 #   --input_graph=./model2/graph.pbtxt \
 #   --input_checkpoint=./model2/model.ckpt-81852 \
-#   --input_binary=false \
+#   --input_binary=false \  
 #   --output_graph=/tmp/frozen.pb \
 #   --output_node_names=input_tensor,output_pred
 

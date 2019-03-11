@@ -1,27 +1,30 @@
 import numpy as np
+import csv
 x = []
 
-f = open(r'''/home/kartik/work/projects/motion/local/ddd_data.txt''', 'r')
+f = open(r'''/home/daanvir/gg/project/SRM_project/motion_ml/ddd_data.txt''', 'r')
 
 a = f.read().split('\n')
 i = 0
 y = []
 print(len(a)/64)
-while(i < len(a)-64*6):
+
+while(i < len(a)-64*5):
     l = a[i].split(' ')
     if(i % 64 == 0):
-        y.append(a[i][1])
+        y.append(int(l[1]))
         a.pop(i)
     i += 1
 q = []
 u = 0
 k = 0
-
+y.pop(1024)
 y = np.array(y)
-
+print(y)
 print(y.shape)
-while(u < 1):
+while(u < 1024):
     tan = []
+    d=[]
     x = []
     for i in range(128):
 
@@ -61,10 +64,17 @@ while(u < 1):
         q = o
     else:
         q = np.vstack([q, o])
-
+    
     u += 1
-# np.savetxt(r'/home/kartik/work/projects/motion/local/x_pred.csv',
-#            q, delimiter=',')
-# np.savetxt(r'C:\Users\daanvir\Desktop\y.csv', y, delimiter=',')
-print(q.shape)
-print(y[0])
+d=np.array(q)
+print(d)
+
+
+#with open("/home/daanvir/gg/project/SRM_project/x.csv","w+") as my_csv:
+#    csvWriter = csv.writer(my_csv,delimiter=',')
+#    csvWriter.writerows(d)
+np.savetxt(r'/home/daanvir/gg/project/SRM_project/x.csv',
+            d.flatten(), header=str(d.shape))
+np.savetxt(r'/home/daanvir/gg/project/SRM_project/y.csv', y, delimiter=',')
+print(d.shape)
+
