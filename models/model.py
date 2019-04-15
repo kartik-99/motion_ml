@@ -31,7 +31,7 @@ n_dim = 48
 
 
 learning_rate = 0.01
-training_epochs = 2000
+training_epochs = 1000
 batch_size = 100
 display_step = 1000
 model_path = r'/home/daanvir/gg/project/SRM_project/NMI'
